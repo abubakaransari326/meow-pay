@@ -28,7 +28,7 @@ What the API code is and how the pieces connect. Filled in as each step lands.
 `cd backend && mvn test` runs `MoneyPathTest` (Surefire `*Test`). The class talks HTTP via `TestRestTemplate` against a real committed Postgres — no class-level `@Transactional`.
 
 - `TestPostgres` starts Postgres with Testcontainers (`postgres:16-alpine`). If the Java Docker client fails (common on Docker Engine 29), it falls back to `CliPostgres` (`docker run`). Either way, `@DynamicPropertySource` injects url / user / password. Compose is not the test database.
-- Cases: signup 100, happy path −N/+N, insufficient first and replay both 409, COMPLETED replay 200, fingerprint conflict, `Milo`/`milo` same key, VALIDATION (missing/blank/129-char key, 65-char username, 73-char password, amount 0 and `10.5`), SAME_CAT / NOT_FOUND, extra `senderUsername` ignored, overlapping 80+80 (sender ends at 20), same-key parallel 201+200, history isolation, parallel register 201+409, empty-ledger cat login → 0.
+- Cases: signup 100, happy path −N/+N, insufficient first and replay both 409, COMPLETED replay 200, fingerprint conflict (amount **or** recipient), `Milo`/`milo` same key, VALIDATION (missing/blank/129-char key, 65-char username, 73-char password, amount 0 and `10.5`), SAME_CAT / NOT_FOUND, extra `senderUsername` ignored, overlapping 80+80 (sender ends at 20), same-key parallel 201+200, history isolation (Milo empty; Whiskers sees one **IN** / COMPLETED from Luna), parallel register 201+409, empty-ledger cat login → 0.
 - Empty-ledger uses `JdbcTemplate` + `PasswordEncoder` so the cat can log in. There is no `GET /api/nope` INTERNAL assertion.
 
 ## Runbook

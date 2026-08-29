@@ -139,6 +139,25 @@ class MoneyPathTest {
     }
 
     @Test
+    void sameKeyDifferentRecipientConflictsWithoutSecondMovement() {
+        Session sender = register(unique("key-r2"));
+        Session milo = register(unique("milo"));
+        Session whiskers = register(unique("whisk"));
+        String key = UUID.randomUUID().toString();
+
+        ResponseEntity<Map> first = transfer(sender, milo.username, 10, key);
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        ResponseEntity<Map> conflict = transfer(sender, whiskers.username, 10, key);
+        assertThat(conflict.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(conflict.getBody().get("error")).isEqualTo("IDEMPOTENCY_CONFLICT");
+
+        assertThat(balance(sender)).isEqualTo(90);
+        assertThat(balance(milo)).isEqualTo(110);
+        assertThat(balance(whiskers)).isEqualTo(100);
+    }
+
+    @Test
     void sameKeyDifferentCasingIsSamePayload() {
         Session sender = register(unique("case"));
         Session recipient = register("Milo-" + UUID.randomUUID().toString().substring(0, 8));
@@ -339,7 +358,16 @@ class MoneyPathTest {
         assertThat(history(milo)).isEmpty();
         List<Map<String, Object>> lunaHistory = history(luna);
         assertThat(lunaHistory).hasSize(1);
+        assertThat(lunaHistory.getFirst().get("direction")).isEqualTo("OUT");
+        assertThat(lunaHistory.getFirst().get("status")).isEqualTo("COMPLETED");
         assertThat(lunaHistory.getFirst().get("counterpartyUsername")).isEqualTo(whiskers.username);
+
+        List<Map<String, Object>> whiskersHistory = history(whiskers);
+        assertThat(whiskersHistory).hasSize(1);
+        assertThat(whiskersHistory.getFirst().get("direction")).isEqualTo("IN");
+        assertThat(whiskersHistory.getFirst().get("status")).isEqualTo("COMPLETED");
+        assertThat(whiskersHistory.getFirst().get("counterpartyUsername")).isEqualTo(luna.username);
+        assertThat(whiskersHistory.getFirst().get("amount")).isEqualTo(10);
 
         String raw = rest.exchange(
                 "/api/recipients",

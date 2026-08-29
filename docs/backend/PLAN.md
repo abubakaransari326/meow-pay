@@ -517,13 +517,14 @@ Implement **from this list** (same as PLAN testing section):
 - Insufficient: no ledger, REJECTED, **409**; recipient history empty; **replay of that key is 409 again, never 200**.
 - COMPLETED replay → **200**, one movement.
 - Same key, different amount → `IDEMPOTENCY_CONFLICT`.
+- Same key, same amount, different recipient → `IDEMPOTENCY_CONFLICT`, balances unchanged.
 - `Milo` vs `milo` same key → 200, not conflict.
 - Missing + blank + over-long (65-char username, 73-char password, 129-char key) → `VALIDATION`.
 - Amount 0 and `10.5` → 400 + `VALIDATION` code.
 - Same-cat, unknown recipient, extra `senderUsername` (must succeed, not fail on unknown property).
 - **Overlapping 80+80, two threads + latch, two HTTP requests** (not sequential, not in one test TX): dedicated 100-treat sender (not luna leftover at 90); one COMPLETED, one INSUFFICIENT, **that sender’s balance = 20**. Do not assert only global ledger SUM.
 - **Same-key parallel** (two threads, same `Idempotency-Key`, same body): no 500; outcomes match the replay table (`COMPLETED` → 201 then 200, never a REJECTED → 200). This is the unique-violation / outer-catch case; the row lock often serializes it, but the test must still exist.
-- History isolation; no password leak.
+- History isolation; recipient of a COMPLETED send sees one **IN** row; no password leak.
 - **Parallel register** (two threads, same username): one 201, one 409 `USERNAME_TAKEN`, not 500. Sequential `olive` then `olive` is **not** this test — that only hits the exists-check.
 - Empty-ledger cat: SQL-insert a cat with a **known BCrypt hash** and **no** signup row, then **login** (or mint a JWT with `sub` = that id) and `GET /api/me` → balance `0`. A fixture row without a token is 401; Olive’s token is 100. Do not leave this as “SQL then GET.”
 - Do **not** assert `INTERNAL` on `GET /api/nope` — that is 404, not a 500 hook. Leave `INTERNAL` in the advice for real uncaught exceptions; skip a dedicated 5xx test unless you add a test-only throw hook.
