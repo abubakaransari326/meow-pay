@@ -11,12 +11,12 @@
 - [x] 4 — Flyway schema + JPA
 - [x] 5 — Register + signup bonus
 - [x] 6 — Login
-- [ ] 7 — Seed luna / milo / whiskers
-- [ ] 8 — `GET /api/me` and `/api/recipients`
-- [ ] 9 — `POST /api/transfers`
-- [ ] 10 — `GET /api/me/transfers`
-- [ ] 11 — `MoneyPathTest`
-- [ ] 12 — README how-to-run
+- [x] 7 — Seed luna / milo / whiskers
+- [x] 8 — `GET /api/me` and `/api/recipients`
+- [x] 9 — `POST /api/transfers`
+- [x] 10 — `GET /api/me/transfers`
+- [x] 11 — `MoneyPathTest`
+- [x] 12 — README how-to-run
 
 **Review this file** with `@critic`. Product rules (API shapes, replay table, lock-then-SUM) stay in [PLAN.md](../../PLAN.md). This file is the **build script** plus the **authoritative DB schema**.
 

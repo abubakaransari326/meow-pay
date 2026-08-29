@@ -1,5 +1,6 @@
 package com.meowpay.cat;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public interface CatRepository extends JpaRepository<Cat, UUID> {
     Optional<Cat> findByUsername(String username);
 
     boolean existsByUsername(String username);
+
+    List<Cat> findByIdNotOrderByUsernameAsc(UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Cat c where c.id = :id")
