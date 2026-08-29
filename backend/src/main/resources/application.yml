@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: meowpay
+  datasource:
+    username: meowpay
+    password: meowpay
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: false
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+
+server:
+  port: 8080
+
+# Demo-only. Do not reuse in production. Override with MEOWPAY_JWT_SECRET if you deploy.
+meowpay:
+  jwt:
+    secret: meowpay-local-demo-only-not-for-prod-do-not-reuse
+    ttl: 7d
+  cors:
+    origin: http://localhost:5173

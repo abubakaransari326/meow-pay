@@ -1,5 +1,7 @@
 # PLAN — MeowPay send-treats slice
 
+**Backend build steps + DB schema (for critic review):** [docs/backend/PLAN.md](docs/backend/PLAN.md)
+
 **Role:** builder. Critic pass 3: no blockers. Pass-3 should-fixes are closed below. **Plan only — do not implement until the human approves.**
 
 **Graded path:** clone → one Compose command → open the web app → send treats. Live deploy is a later task, not part of this plan.
@@ -87,7 +89,7 @@ Three tables, one migration:
 | Table | Role |
 | --- | --- |
 | `cats` | id (PK), username **stored lowercase**, unique on that value, password hash. No balance column as source of truth. |
-| `ledger_entries` | money: signed **integer** amount, cat, type (`SIGNUP_BONUS` / `TRANSFER_DEBIT` / `TRANSFER_CREDIT`), optional transfer id. |
+| `ledger_entries` | money: signed **integer** amount, cat, type (`SIGNUP_BONUS` / `TRANSFER_DEBIT` / `TRANSFER_CREDIT`), optional transfer id. Partial **`UNIQUE (transfer_id, type)`** where `transfer_id IS NOT NULL` (one debit and one credit per completed transfer). |
 | `transfers` | sender, recipient, amount (integer), status (`COMPLETED` \| `REJECTED`), **idempotency_key `NOT NULL`**, unique `(sender_id, idempotency_key)`. |
 
 Balance = **`COALESCE(SUM(ledger_entries.amount), 0)`** for that cat. A SUM of no rows is SQL `NULL`; treat that as 0, never unbox null.
@@ -101,11 +103,11 @@ Signup and transfer both write ledger rows. A future top-up is another credit wi
 ### Phase 2 — Auth (thin)
 
 - `POST /api/auth/register` and `POST /api/auth/login`.
-- Usernames **trimmed + lowercased** on register and login. Unique index on the normalized value. Parallel register of the same name → 409 `USERNAME_TAKEN`, not 500.
-- Passwords hashed (BCrypt). JWT HS256 via **jjwt**, **TTL 7 days**, **`sub` = cat id** (stable PK). Username is login + display only. No refresh.
-- Filter: protected routes require `Authorization: Bearer …`. `OPTIONS` and `/api/auth/**` are open. **STATELESS + CSRF disabled.**
+- Usernames **trimmed + lowercased** on register and login. Trim **before** the blank check. After trim: empty or `> 64` → 400 `VALIDATION`. Unique index on the normalized value. Parallel register of the same name → 409 `USERNAME_TAKEN`, not 500 (outer method not `@Transactional`; catch unique violation after the inner TX).
+- Passwords hashed (BCrypt). Empty or `> 72` → 400 `VALIDATION` (BCrypt only uses 72 bytes). JWT HS256 via **jjwt**, **TTL 7 days**, **`sub` = cat id** (stable PK). Username is login + display only. No refresh. Do not log password or `Authorization`.
+- Filter: protected routes require `Authorization: Bearer …`. `OPTIONS` and `/api/auth/**` are open. **STATELESS + CSRF disabled.** CORS is a **global** `CorsConfigurationSource` in the security chain (not `@CrossOrigin` on a later controller).
 - Register, in **one transaction**: insert cat + ledger credit of +100 (`SIGNUP_BONUS`).
-- `@ControllerAdvice` maps `HttpMessageNotReadableException` / bind errors to `{ "error": "VALIDATION", "message": "..." }`. Tests for `10.5` assert the **code**, not only 400.
+- `@ControllerAdvice` maps `HttpMessageNotReadableException` / bind errors to `{ "error": "VALIDATION", "message": "..." }`. Tests for `10.5` assert the **code**, not only 400. Uncaught → `{ "error": "INTERNAL", "message": "..." }` with no Hibernate/SQL text.
 
 ### Phase 3 — Seeded demo cats
 
@@ -123,7 +125,7 @@ Signup and transfer both write ledger rows. A future top-up is another credit wi
 
 **Transfer algorithm — this order, one DB transaction. The lock is a step, not a footnote.**
 
-Validation that does not need money or the lock may run first (and fail without opening a transaction if we want): missing/blank `Idempotency-Key` → 400 `VALIDATION`; amount missing, ≤ 0, or **not an integer** (e.g. `10.5`) → 400 `VALIDATION`; recipient missing → 400 `VALIDATION`. **Trim + lowercase `recipientUsername`** before lookup and before comparing payloads. Recipient not found → 404 `NOT_FOUND`; recipient is sender → 400 `SAME_CAT`. Sender = JWT cat id. Ignore `senderUsername` in the body.
+Validation that does not need money or the lock may run first (and fail without opening a transaction if we want): missing/blank/`> 128` `Idempotency-Key` → 400 `VALIDATION`; amount missing, ≤ 0, or **not an integer** (e.g. `10.5`) → 400 `VALIDATION`; recipient missing → 400 `VALIDATION`. After trim: username empty or `> 64`, password empty or `> 72` → 400 `VALIDATION` (BCrypt 72-byte limit). Trim username **before** the blank check. **Trim + lowercase `recipientUsername`** before lookup and before comparing payloads. Recipient not found → 404 `NOT_FOUND`; recipient is sender → 400 `SAME_CAT`. Sender = JWT cat id. Ignore `senderUsername` in the body (do **not** set `FAIL_ON_UNKNOWN_PROPERTIES`).
 
 Idempotency fingerprint is **recipient id + amount**, not the raw username string (`Milo` vs `milo` is the same payload).
 
@@ -138,7 +140,7 @@ Then, **inside one transaction**:
 4. If `SUM < amount`: insert `transfers` row `REJECTED` (key stored, **no** ledger rows) → **409 `INSUFFICIENT_FUNDS`**.
 5. If `SUM >= amount`: insert `transfers` row `COMPLETED` + debit **−N** + credit **+N** → **201** transfer body. Both ledger rows or neither.
 
-**Unique-constraint race (same key, two in-flight):** catch the unique violation → `SELECT` by `(sender_id, key)` → return that row as a replay (200 / 409 per the table). If the row is missing (winner rolled back), **retry the use-case once**. Do not return 500.
+**Unique-constraint race (same key, two in-flight):** outer method is **not** `@Transactional`. Inner TX does lock → lookup → SUM → insert. Catch the unique violation **after** that TX has ended → `SELECT` by `(sender_id, key)` → return that row as a replay (200 / 409 per the table). If the row is missing (winner rolled back), **retry the use-case once**. Do not catch `DataIntegrityViolationException` inside `@Transactional` (rollback-only → 500). Same outer-catch pattern as register.
 
 Two different keys on the same sender serialize on the row lock, so both cannot pass a stale SUM.
 
@@ -173,7 +175,7 @@ Thin UI (Phase 6) may already be clickable while these land.
 
 - Compose: healthy Postgres → API → web. Reviewer needs Docker, not a JDK/Node toolchain.
 - Web image / Compose build arg: `VITE_API_URL=http://localhost:8080` (or the published API port).
-- README: what we built, `docker compose up --build`, open `http://localhost:5173` only, **wait until the API is up (~20–30s on first boot)**, demo cat passwords, JWT default is demo-only, what we skipped (top-up rail, refresh tokens, httpOnly cookies, hosted deploy), how AI was used (builder/critic).
+- README: what we built, `docker compose up --build`, open `http://localhost:5173` only, **wait until the API is up (~40–60s on first boot)**, demo cat passwords, JWT default is demo-only, what we skipped (top-up rail, refresh tokens, httpOnly cookies, hosted deploy), how AI was used (builder/critic). Run the API via Compose; do not publish Postgres 5432.
 - No “copy `.env` first.” No deploy sleep warning until we actually deploy.
 
 ### Later (not this plan) — hosted demo
@@ -196,13 +198,14 @@ Public API. Do not rename silently. All JSON. Amounts are **JSON integers** (ser
 
 | HTTP | `error` | When |
 | --- | --- | --- |
-| 400 | `VALIDATION` | missing/blank fields, **missing/blank `Idempotency-Key`**, amount missing / ≤ 0 / **not an integer**, malformed JSON |
+| 400 | `VALIDATION` | missing/blank fields, **missing/blank/`> 128` `Idempotency-Key`**, username empty/`> 64`, password empty/`> 72`, amount missing / ≤ 0 / **not an integer**, malformed JSON |
 | 400 | `SAME_CAT` | recipient is the sender |
 | 401 | `UNAUTHORIZED` | bad/missing JWT, bad login |
 | 404 | `NOT_FOUND` | recipient username does not exist |
 | 409 | `USERNAME_TAKEN` | register with existing (normalized) username |
 | 409 | `INSUFFICIENT_FUNDS` | send when post-lock SUM < amount (first time **and** replay) |
 | 409 | `IDEMPOTENCY_CONFLICT` | same key, different `recipientUsername` or `amount` |
+| 500 | `INTERNAL` | uncaught; `message` has no Hibernate/SQL text |
 
 ### Replay table (`POST /api/transfers`, same sender)
 
@@ -212,7 +215,7 @@ Public API. Do not rename silently. All JSON. Amounts are **JSON integers** (ser
 | `INSUFFICIENT_FUNDS` | yes, `REJECTED`, no ledger | yes | **409** `INSUFFICIENT_FUNDS` again, **never 200** |
 | `VALIDATION` / `SAME_CAT` / `NOT_FOUND` | no | no | re-evaluate (not an attempt) |
 
-First `COMPLETED` is **201**. Replay of `COMPLETED` is **200**. Replay of insufficient is **409**, not 200-with-a-rejected-body.
+First `COMPLETED` is **201**. Replay of `COMPLETED` is **200**. Replay of insufficient is **409**, not 200-with-a-rejected-body. Map HTTP status **by stored outcome**, never `replay=true` → 200.
 
 Sticky reject on the **same key** is intentional: that key means “this submit.” A later send after the balance changes is a **new click → new key**.
 
@@ -344,15 +347,15 @@ Do **not** put product code under `docs/`, `builder-critic-setup/`, or agent ski
 - Replay same key + same body after `COMPLETED` → **200**, one movement.
 - Replay same key + same body after `INSUFFICIENT_FUNDS` → **409** again, still no ledger rows.
 - Same key, **different** amount or recipient → `IDEMPOTENCY_CONFLICT`, still one movement (the first). Same key + `Milo` vs `milo` is **not** a conflict.
-- Missing `Idempotency-Key` → 400 `VALIDATION`. Blank key → 400 `VALIDATION`.
+- Missing `Idempotency-Key` → 400 `VALIDATION`. Blank key → 400 `VALIDATION`. Key `> 128`, username `> 64`, password `> 72` → 400 `VALIDATION` (not 500).
 - Amount ≤ 0 → 400 `VALIDATION`. Amount `10.5` (non-integer) → 400 **and** `error: "VALIDATION"` (not only status).
 - Same-cat → 400 `SAME_CAT`. Unknown recipient → 404. `recipientUsername: "Milo"` finds `milo`.
 - Extra body field `senderUsername` (other cat): JWT cat is still the sender; that other cat is not debited.
-- **Two overlapping sends (must overlap in time — two threads / latch / parallel HTTP, not sequential MockMvc), different keys, balance 100, amounts 80 and 80:** one `COMPLETED`, one `INSUFFICIENT_FUNDS` / `REJECTED`, ledger **conserves 100**. Sequential 80 then 80 may exist as a weaker extra case; it does not prove the lock.
-- Unique-constraint race / double submit same key: no 500; replay behavior as table.
+- **Two overlapping sends (must overlap in time — two threads / latch / parallel HTTP, not sequential MockMvc, not a class-level `@Transactional` test), different keys, balance 100, amounts 80 and 80:** one `COMPLETED`, one `INSUFFICIENT_FUNDS` / `REJECTED`, **sender balance = 20** (not −60). Global `SUM(all ledger)` staying flat does **not** prove the lock (two successful 80s still conserve the world total). Sequential 80 then 80 may exist as a weaker extra case; it does not prove the lock.
+- Unique-constraint race / double submit same key (including **parallel same-key** HTTP): no 500; replay behavior as table; unique catch is outside the inner TX.
 - History as Milo does **not** include Luna→Whiskers.
 - `GET /api/me` and `GET /api/recipients` have **no** `password` / `passwordHash`.
-- Parallel register of the same username → 409 `USERNAME_TAKEN`, not 500.
+- Parallel register of the same username (two threads, not sequential exists-check) → 409 `USERNAME_TAKEN`, not 500.
 
 **Manual (reviewer path, once UI exists)**
 
@@ -421,9 +424,26 @@ No deploy commit in this story.
 | P3-nit SCOPE | **Won’t fix here** | SCOPE polish #1 is stale vs this plan; statuses stay must-ship. Not a runtime bug. |
 | P3-nit Instant | **Fixed** | `createdAt` is UTC `Instant`. |
 | P3-nit boot wait | **Fixed** | README: wait ~20–30s for first API boot. |
+| B-1 | **Fixed** | Step 5 proves bonus with SQL; `GET /api/me` is Step 8. See [docs/backend/PLAN.md](docs/backend/PLAN.md). |
+| B-2 | **Fixed** | Overlapping lock proof is sender = 20 + one 201/one 409, not global SUM. |
+| B-3 | **Fixed** | Unique-violation catch is outside `@Transactional` for register and transfer. |
+| B-4 | **Fixed** | Money tests are HTTP against a committed DB; no class-level `@Transactional` on the lock case. |
+| B-5 | **Fixed** | Recipients: never self, include milo+whiskers; exact-two only after `down -v`. |
+| B-6 | **Fixed** | CORS is a global security-chain bean; OPTIONS works before transfer mapping. |
+| B-7 | **Fixed** | JRE image installs curl; Compose `start_period` 40–60s. |
+| B-8 | **Fixed** | API via Compose only; do not publish 5432. |
+| B-9 | **Fixed** | Username ≤64, key ≤128, password ≤72 after trim; else `VALIDATION`. |
+| B-10 | **Fixed** | Partial `UNIQUE (transfer_id, type)`; do not fail on unknown JSON fields. |
+| C-1 | **Fixed** | Transfer status by outcome: COMPLETED 201/200; INSUFFICIENT first and replay **409**. Never `replay=true` → 200. |
+| C-2 | **Fixed** | Compose sets DB user/password; Flyway off until V1. |
+| C-3 | **Fixed** | Overlap uses a fresh 100-treat sender; no mid-script `down -v`; Luna→whiskers is an explicit send. |
+| C-4 | **Fixed** | Tests inject datasource url/user/password. |
+| C-5 | **Fixed** | Empty-ledger `/api/me` authenticates as that cat (login or minted JWT). |
+| C-6 | **Fixed** | No INTERNAL assertion on unknown URL (that is 404). |
+| C-7 | **Fixed** | Parallel-register test in the automated suite. |
 
 ---
 
 ## Stop line
 
-Pass-3 should-fixes are closed. **Do not implement** until the human explicitly approves.
+Backend-step critic findings through C-7 are closed in [docs/backend/PLAN.md](docs/backend/PLAN.md). **Do not implement** until the human explicitly approves a step.
