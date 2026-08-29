@@ -13,7 +13,7 @@ spring:
         jdbc:
           time_zone: UTC
   flyway:
-    enabled: false
+    enabled: true
   jackson:
     deserialization:
       accept-float-as-int: false

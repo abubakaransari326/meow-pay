@@ -1,20 +1,30 @@
 package com.meowpay.auth;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Bodies are accepted so malformed JSON maps to VALIDATION. Register/login land in later steps. */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
     @PostMapping("/register")
-    public void register(@RequestBody AuthDtos.AuthRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthDtos.AuthResponse register(@RequestBody AuthDtos.AuthRequest request) {
+        return authService.register(request.username(), request.password());
     }
 
     @PostMapping("/login")
-    public void login(@RequestBody AuthDtos.AuthRequest request) {
+    public AuthDtos.AuthResponse login(@RequestBody AuthDtos.AuthRequest request) {
+        return authService.login(request.username(), request.password());
     }
 }

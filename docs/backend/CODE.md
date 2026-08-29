@@ -15,8 +15,18 @@ What the API code is and how the pieces connect. Filled in as each step lands.
 - `JwtService` issues/parses HS256 tokens; `sub` is the cat UUID. `JwtAuthFilter` does not look up cats yet (no table). Invalid/missing token on a protected route → `{ "error": "UNAUTHORIZED" }`.
 - Errors: `{ "error", "message" }`. Bind / unreadable JSON / missing header → `VALIDATION`. Uncaught → `INTERNAL` with no SQL in `message`. Do not log password or `Authorization`.
 - Jackson `accept-float-as-int` is **false**. Hibernate JDBC timezone is UTC.
-- `POST /api/auth/register` and `/login` exist so bad JSON is `VALIDATION`. They do not create cats or issue tokens yet.
-- Flyway is **off**. There is no `db/migration` yet (that is Step 4).
+- `POST /api/auth/register` → **201** `{ token, username }`. Username is trimmed, then rejected if empty/`> 64`, then lowercased. Password empty/`> 72` → `VALIDATION`. One inner TX writes the cat + `SIGNUP_BONUS` **+100**. The outer method is not `@Transactional`; a unique-name race becomes `USERNAME_TAKEN` (409), not 500.
+- `POST /api/auth/login` → **200** same body. Unknown user and wrong password both return 401 `UNAUTHORIZED` with the same message. JWT `sub` is the cat id.
+
+## Schema (Flyway `V1__init.sql`)
+
+Flyway is **on**. Three tables, no balance column on `cats`.
+
+- `cats` — id, lowercase username, BCrypt hash, `created_at`.
+- `transfers` — sender/recipient, positive `amount`, `COMPLETED`|`REJECTED`, `idempotency_key NOT NULL`, `UNIQUE (sender_id, idempotency_key)`.
+- `ledger_entries` — signed `amount` (`−N` debit, `+N` credit/signup), type, `transfer_id` NULL only for `SIGNUP_BONUS`. CHECKs enforce sign and type vs `transfer_id`. Partial `UNIQUE (transfer_id, type)` stops two credits on one transfer.
+
+Balance of a cat is `COALESCE(SUM(ledger_entries.amount), 0)` (`LedgerEntryRepository.sumBalance`). Sender lock is `CatRepository.lockById` (`FOR UPDATE`). Debit is negative; `type` is metadata only.
 - Datasource username/password default to the demo role `meowpay` / `meowpay`. There is **no** JDBC URL in `application.yml` — Compose sets `SPRING_DATASOURCE_URL` (and user/password). We do not default to `localhost:5432`.
 
 ## How it runs (Compose)

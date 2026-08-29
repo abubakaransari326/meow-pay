@@ -8,9 +8,9 @@
 - [x] 1 — Spring Boot skeleton + `/api/health`
 - [x] 2 — Compose Postgres + API (no host 5432)
 - [x] 3 — Security, CORS, JWT, error envelope
-- [ ] 4 — Flyway schema + JPA
-- [ ] 5 — Register + signup bonus
-- [ ] 6 — Login
+- [x] 4 — Flyway schema + JPA
+- [x] 5 — Register + signup bonus
+- [x] 6 — Login
 - [ ] 7 — Seed luna / milo / whiskers
 - [ ] 8 — `GET /api/me` and `/api/recipients`
 - [ ] 9 — `POST /api/transfers`
