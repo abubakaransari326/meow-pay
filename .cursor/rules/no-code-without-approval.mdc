@@ -1,0 +1,21 @@
+---
+description: Do not write or edit product code unless the human explicitly approves it.
+alwaysApply: true
+---
+
+# No code without explicit approval
+
+Do not write, edit, generate, scaffold, or delete product code unless the human
+has explicitly approved that implementation step in this conversation.
+
+**Allowed without extra approval:** reading the repo; updating `PLAN.md` when
+asked to plan; answering questions; creating or editing rules/docs the human
+just asked for.
+
+**Not allowed until they say so** (examples: "implement this", "go ahead and
+code", "approved, build it"): Java/TypeScript/SQL, Dockerfiles, Compose,
+configs that ship the app, tests, README run-story rewrites that land with a
+build.
+
+A plan, critic pass, or "let's see what you can do" is **not** approval to
+implement. After a plan is agreed, stop and wait. If unsure, ask.

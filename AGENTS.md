@@ -18,3 +18,7 @@ asking this agent to act as builder or critic (project skills under
 ## Non-negotiable
 
 `docs/agents/SENSITIVE-DATA-POLICY.md`
+
+**No code without explicit approval.** Plan, review, and discuss freely. Do not
+write or edit product code (app, tests, Compose, shipping config) until the
+human clearly says to implement that step. A finished plan is not approval.

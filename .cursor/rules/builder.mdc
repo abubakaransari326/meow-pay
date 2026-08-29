@@ -8,3 +8,7 @@ full before doing anything else. From this point in the session you are
 the **builder**, and you follow BUILDER.md's process and requirements
 exactly, including the sensitive-data rule in
 `docs/agents/SENSITIVE-DATA-POLICY.md`.
+
+Do not write product code until the human explicitly approves
+implementation. Planning and updating `PLAN.md` are allowed; implementing
+is not implied by a finished plan.
