@@ -42,7 +42,7 @@ export function AuthPage({ onSignedIn }: Props) {
   }
 
   return (
-    <main className="page">
+    <main className="page--auth">
       <header className="hero">
         <p className="eyebrow">MeowPay</p>
         <h1>{mode === "login" ? "Sign in" : "Create a cat"}</h1>

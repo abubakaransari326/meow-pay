@@ -8,10 +8,10 @@
 - [x] 1 — Vite + React + TypeScript skeleton on port 5173
 - [x] 2 — API client (contract types, `error` switch, 401 split)
 - [x] 3 — Auth screen (register / login, JWT in `localStorage`)
-- [ ] 4 — Send-screen shell (`/api/me`, `/api/recipients`, no POST)
-- [ ] 5 — Confirm + send treats (ref guard, new key per confirm, 200/201)
-- [ ] 6 — History (`/api/me/transfers`, IN / OUT / REJECTED)
-- [ ] 7 — Compose `web` service (nginx, baked `VITE_API_URL`)
+- [x] 4 — Send-screen shell (`/api/me`, `/api/recipients`, no POST)
+- [x] 5 — Confirm + send treats (ref guard, new key per confirm, 200/201)
+- [x] 6 — History (`/api/me/transfers`, IN / OUT / REJECTED)
+- [x] 7 — Compose `web` service (nginx, baked `VITE_API_URL`)
 - [ ] 8 — README: open `http://localhost:5173`
 
 **Review this file** with `@critic`. The shipped API is [docs/backend/CONTRACT.md](../backend/CONTRACT.md). Product rules also live in [PLAN.md](../../PLAN.md) Phases 6–7. This file is the **build script**.
@@ -48,7 +48,17 @@ Orange-tabby / cream, so it reads as cats-and-treats without chrome. Land the to
 | Card | `#fffdf8` | forms / history |
 | Type | Nunito, then system sans | UI + headings |
 
-Wide enough line-height, one column ~28rem, no cat clip-art or emoji-as-layout. A “treats” word is the theme; we do not draw a mascot.
+Wide enough line-height, no cat clip-art or emoji-as-layout. A “treats” word is the theme; we do not draw a mascot.
+
+**Auth** stays a centered card (~28rem).
+
+**Signed in** is a small **web dashboard**, not a phone-width column on a desktop:
+
+- Header: this cat, balance (when it exists), Sign out.
+- Content max ~64rem.
+- From **640px** up: send and history **side by side**.
+- Below 640px: same blocks **stacked**, full width, 1rem gutters, no horizontal scroll, buttons easy to tap (`min-height` ~2.75rem).
+- No sidebar, no extra routes, no charts, no UI kit.
 
 ---
 
@@ -73,6 +83,7 @@ These are the FE side of the contract. Do not “simplify” them during a step.
 15. **No frontend tests.** Manual / browser path only (SCOPE). Backend already covers the money.
 16. **No new API.** If the UI wants a field the contract does not have, the UI is wrong.
 17. **TypeError retry lives only in `sendTreats`.** Never wrap register/login (or GET) in a generic retry. A dropped 201 on register + retry is `USERNAME_TAKEN` and no stored token.
+18. **Dashboard + responsive.** Signed-in layout is the Look dashboard (header + cards; two columns from 640px). Auth stays the narrow card. No second breakpoint kit.
 
 ---
 
@@ -150,9 +161,9 @@ Send stub in this step includes a one-line **Sign out** (clear `meowpay.token`, 
 
 ### Step 4 — Send-screen shell
 
-**Build:** If token present, load `GET /api/me` and `GET /api/recipients` in parallel. Show **this** username and balance. Recipient `<select>`. Amount input (not submitted yet). Keep the Step 3 Sign out (header is fine). Loading and “API not up” empty/error states. Protected `401` → auth. **No** `POST /api/transfers` yet. **No** sender field.
+**Build:** If token present, load `GET /api/me` and `GET /api/recipients` in parallel. Dashboard header: **this** username, balance, Sign out. Recipient `<select>`. Amount input (not submitted yet). Loading and “API not up” empty/error states. Protected `401` → auth. **No** `POST /api/transfers` yet. **No** sender field. Use `.dash` / `.dash-grid` from the Look (stack on a narrow viewport).
 
-**Test (browser):** Luna sees 100 (or current ledger balance) and milo + whiskers (not luna). A brand-new cat sees the three demo cats, not themselves.
+**Test (browser):** Luna sees 100 (or current ledger balance) and milo + whiskers (not luna). A brand-new cat sees the three demo cats, not themselves. Resize below 640px: no horizontal scroll, header still usable.
 
 **Docs:** CODE.md: send shell. **Do not** change README.
 
@@ -182,7 +193,7 @@ Disable Send/Confirm while `busy` or recipients empty. Not a modal library.
 
 **Build:** Load `GET /api/me/transfers` with me/recipients. Compare `row.direction === "IN" | "OUT"` and `row.status === "COMPLETED" | "REJECTED"` (uppercase, as the API sends). Display can be “From”/“To” and “Completed”/“Rejected”. Color OUT ginger, IN sage, REJECTED clay. Newest first. Empty: “No transfers yet.” After completed send **and** after insufficient, refetch history. Luna’s failed 1000 is `OUT` / `REJECTED`. Milo does not see that reject. Whiskers (or milo after a completed receive) sees `IN` / `COMPLETED`.
 
-**Test (browser):** After Step 5 leftovers or a fresh send: sender sees OUT; recipient (other browser / other login) sees IN; overspend appears only on the sender.
+**Test (browser):** After Step 5 leftovers or a fresh send: sender sees OUT; recipient (other browser / other login) sees IN; overspend appears only on the sender. At ≥640px history sits beside send; below 640px it stacks under send.
 
 **Docs:** CODE.md: history fields and refetch. **Do not** change README.
 
@@ -202,7 +213,7 @@ Root [`docker-compose.yml`](../../docker-compose.yml): `web` service, `5173:80`,
 
 ### Step 8 — README how-to-run (web)
 
-**Build:** Update [README.md](../../README.md): one command starts Postgres + API + web; open `http://localhost:5173`; wait for first API boot; demo cats; send / overspend on the page; optional `cd web && npm run dev` for FE work; CORS is `localhost` only; skipped (funding rail, refresh tokens, httpOnly, hosted deploy, FE tests); lock is still `FOR UPDATE` (backend). Keep curl as optional. No `.env` copy.
+**Build:** Update [README.md](../../README.md): one command starts Postgres + API + web; open `http://localhost:5173`; wait for first API boot; demo cats; send / overspend on the page; the signed-in screen is a small dashboard that stacks on a phone-width viewport; optional `cd web && npm run dev` for FE work; CORS is `localhost` only; skipped (funding rail, refresh tokens, httpOnly, hosted deploy, FE tests); lock is still `FOR UPDATE` (backend). Keep curl as optional. No `.env` copy.
 
 **Test:** `docker compose down -v && docker compose up --build --wait`, follow README, complete the reviewer path (login, send, insufficient).
 
@@ -239,6 +250,7 @@ Do **not** change backend Java/SQL unless the critic finds a real contract bug (
 8. **No FE tests.** Manual browser path. Backend `mvn test` stays the money proof.
 9. **Snapshot login-401 bug is out of bounds.** Auth 401 ≠ protected 401.
 10. **One cream / ginger theme.** Tokens in the Look table. No dark mode, no UI kit.
+11. **Dashboard + responsive.** Auth = narrow card. Signed-in = header + cards; two columns from 640px. No sidebar, no native app.
 
 ---
 
@@ -252,7 +264,7 @@ Do **not** change backend Java/SQL unless the critic finds a real contract bug (
 
 ## How we will test
 
-**Not doing:** Cypress, Playwright, Jest/Vitest (unless a human asks), mobile.
+**Not doing:** Cypress, Playwright, Jest/Vitest (unless a human asks), native / Flutter. Narrow-viewport check in the browser is in.
 
 **Each step:** browser against the real API (user rule). Not a screenshot-only check.
 
@@ -300,6 +312,7 @@ Or fewer commits if the human batches. They decide.
 | Auth no ref guard | **Fixed** | Rule 7 + Step 3: same `inFlight` on register/login. |
 | Nit empty recipient | **Fixed** | Rule 6 / 10: no confirm, no POST. |
 | Nit nginx.conf path | **Fixed** | Step 7: copy onto `/etc/nginx/conf.d/default.conf`. |
+| Dashboard / mobile width | **Fixed** | Look + rule 18: signed-in dashboard, stack below 640px. Auth stays a card. |
 
 ---
 

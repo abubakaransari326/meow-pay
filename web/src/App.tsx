@@ -1,21 +1,19 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AuthPage } from "./AuthPage";
-import { SendStub } from "./SendStub";
+import { SendPage } from "./SendPage";
 import { getToken, setToken } from "./api";
 
 export function App() {
   const [signedIn, setSignedIn] = useState(() => Boolean(getToken()));
 
+  const signOut = useCallback(() => {
+    setToken(null);
+    setSignedIn(false);
+  }, []);
+
   if (!signedIn) {
     return <AuthPage onSignedIn={() => setSignedIn(true)} />;
   }
 
-  return (
-    <SendStub
-      onSignedOut={() => {
-        setToken(null);
-        setSignedIn(false);
-      }}
-    />
-  );
+  return <SendPage onSignedOut={signOut} onUnauthorized={signOut} />;
 }

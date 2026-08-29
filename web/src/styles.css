@@ -12,6 +12,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -21,9 +26,50 @@ body {
   line-height: 1.5;
 }
 
-.page {
+.page--auth {
   width: min(28rem, calc(100% - 2rem));
   margin: 3rem auto;
+}
+
+.dash {
+  width: min(64rem, calc(100% - 2rem));
+  margin: 1.5rem auto 2.5rem;
+}
+
+.dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dash-header h1 {
+  margin-bottom: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.balance {
+  margin: 0;
+  color: var(--ginger);
+  font-weight: 700;
+}
+
+.dash-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .dash {
+    margin-top: 2.5rem;
+  }
+
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
 }
 
 .eyebrow {
@@ -40,6 +86,11 @@ h1 {
   line-height: 1.25;
 }
 
+h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
 .lede {
   margin: 0 0 1.5rem;
 }
@@ -51,6 +102,7 @@ h1 {
 button {
   font: inherit;
   cursor: pointer;
+  min-height: 2.75rem;
 }
 
 button:disabled {
@@ -73,13 +125,22 @@ label {
   font-weight: 600;
 }
 
-input {
+input,
+select {
   font: inherit;
+  font-size: 1rem;
   padding: 0.55rem 0.7rem;
+  min-height: 2.75rem;
   border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
   border-radius: 0.45rem;
   background: #fff;
   color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .primary {
@@ -91,9 +152,18 @@ input {
   font-weight: 700;
 }
 
+.ghost {
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+}
+
 .link {
   border: 0;
-  padding: 0;
+  padding: 0 0.25rem;
   background: none;
   color: var(--ginger);
   font-weight: 700;
@@ -115,5 +185,36 @@ input {
 }
 
 .error {
+  color: var(--clay);
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.history li {
+  display: grid;
+  gap: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.history time {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.out {
+  color: var(--ginger);
+}
+
+.in {
+  color: var(--sage);
+}
+
+.rejected {
   color: var(--clay);
 }
