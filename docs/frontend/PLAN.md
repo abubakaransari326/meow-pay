@@ -4,10 +4,10 @@
 
 ## Frontend steps
 
-- [ ] 0 — Repo hygiene (gitignore for `web/`, this checklist, CODE.md stub)
-- [ ] 1 — Vite + React + TypeScript skeleton on port 5173
-- [ ] 2 — API client (contract types, `error` switch, 401 split)
-- [ ] 3 — Auth screen (register / login, JWT in `localStorage`)
+- [x] 0 — Repo hygiene (gitignore for `web/`, this checklist, CODE.md stub)
+- [x] 1 — Vite + React + TypeScript skeleton on port 5173
+- [x] 2 — API client (contract types, `error` switch, 401 split)
+- [x] 3 — Auth screen (register / login, JWT in `localStorage`)
 - [ ] 4 — Send-screen shell (`/api/me`, `/api/recipients`, no POST)
 - [ ] 5 — Confirm + send treats (ref guard, new key per confirm, 200/201)
 - [ ] 6 — History (`/api/me/transfers`, IN / OUT / REJECTED)

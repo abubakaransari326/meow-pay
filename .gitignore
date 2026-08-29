@@ -1,6 +1,8 @@
 .DS_Store
 .idea/
 backend/target/
+web/node_modules/
+web/dist/
 .env
 .env.*
 !.env.example
