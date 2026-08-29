@@ -93,13 +93,10 @@ export function SendPage({ onSignedOut, onUnauthorized }: Props) {
         crypto.randomUUID()
       );
       setSnapshot(null);
-      setAmount("0");
+      setAmount("10");
       setSuccess(`Sent ${result.amount} treats to ${result.recipientUsername}.`);
       inFlight.current = false;
       setBusy(false);
-      const [meRes, historyRes] = await Promise.all([fetchMe(), fetchHistory()]);
-      setMe(meRes);
-      setHistory(historyRes);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized();
@@ -120,6 +117,18 @@ export function SendPage({ onSignedOut, onUnauthorized }: Props) {
       }
       inFlight.current = false;
       setBusy(false);
+      return;
+    }
+    try {
+      const [meRes, historyRes] = await Promise.all([fetchMe(), fetchHistory()]);
+      setMe(meRes);
+      setHistory(historyRes);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized();
+        return;
+      }
+      setError("Could not refresh balance.");
     }
   }
 

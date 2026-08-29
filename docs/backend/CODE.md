@@ -37,6 +37,8 @@ What the API code is and how the pieces connect. Filled in as each step lands.
 
 ## Schema (Flyway `V1__init.sql`)
 
+Pictures of Compose and the ER diagram: [docs/DECISIONS.md](../DECISIONS.md#shape-of-the-system). Column-level source of truth is this V1 file and the schema section of [PLAN.md](PLAN.md).
+
 Flyway is **on**. Three tables, no balance column on `cats`.
 
 - `cats` — id, lowercase username, BCrypt hash, `created_at`.

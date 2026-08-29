@@ -1,6 +1,6 @@
 # Frontend-only implementation plan (critic review)
 
-**Status:** plan only. Do not implement until the human approves a step. The human decides when to commit.
+**Status:** frontend steps 0–8 done. The human decides when to commit.
 
 ## Frontend steps
 
@@ -12,7 +12,7 @@
 - [x] 5 — Confirm + send treats (ref guard, new key per confirm, 200/201)
 - [x] 6 — History (`/api/me/transfers`, IN / OUT / REJECTED)
 - [x] 7 — Compose `web` service (nginx, baked `VITE_API_URL`)
-- [ ] 8 — README: open `http://localhost:5173`
+- [x] 8 — README: open `http://localhost:5173`
 
 **Review this file** with `@critic`. The shipped API is [docs/backend/CONTRACT.md](../backend/CONTRACT.md). Product rules also live in [PLAN.md](../../PLAN.md) Phases 6–7. This file is the **build script**.
 
