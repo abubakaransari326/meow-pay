@@ -1,6 +1,6 @@
 # Backend-only implementation plan (critic review)
 
-**Status:** implementing one approved step at a time. README is how-to-run only (later). Code notes go in [CODE.md](CODE.md). The human decides when to commit.
+**Status:** backend steps 0–12 done. Frontend is a separate plan: [docs/frontend/PLAN.md](../frontend/PLAN.md). Shipped API: [CONTRACT.md](CONTRACT.md). The human decides when to commit.
 
 ## Backend steps
 
@@ -20,7 +20,7 @@
 
 **Review this file** with `@critic`. Product rules (API shapes, replay table, lock-then-SUM) stay in [PLAN.md](../../PLAN.md). This file is the **build script** plus the **authoritative DB schema**.
 
-**In this pass:** `backend/` + root Compose (Postgres + API only) + docs. **Not in this pass:** `web/`, Vercel/Render/Supabase.
+**This pass (done):** `backend/` + root Compose (Postgres + API) + docs. **Frontend:** [docs/frontend/PLAN.md](../frontend/PLAN.md). **Not in either pass:** Vercel/Render/Supabase.
 
 **How we work:** implement **one approved step at a time**. Update [CODE.md](CODE.md) in the same step. Do not update README incrementally. Do not commit unless the human asks.
 
@@ -216,7 +216,7 @@ CREATE UNIQUE INDEX idx_ledger_entries_one_type_per_transfer
 
 ## Locked contract (do not reopen)
 
-Copy these into code and tests. Full JSON shapes stay in [PLAN.md](../../PLAN.md).
+Copy these into code and tests. Shipped JSON shapes for the frontend: [CONTRACT.md](CONTRACT.md). Product-level copy also stays in [PLAN.md](../../PLAN.md).
 
 **Transfer order (one DB transaction after request validation):** lock sender `FOR UPDATE` → idempotency lookup → `COALESCE(SUM(amount), 0)` → `REJECTED` (no ledger) or `COMPLETED` (debit **−N**, credit **+N**).
 
@@ -558,4 +558,4 @@ Implement **from this list** (same as PLAN testing section):
 
 ## After this plan
 
-Frontend is a **separate** plan: thin send UI, 200/201 both success, new click = new key, branch on `error`, 401 → login, browser `VITE_API_URL=http://localhost:8080`.
+Frontend plan: [docs/frontend/PLAN.md](../frontend/PLAN.md). Shipped API: [CONTRACT.md](CONTRACT.md).

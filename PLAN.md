@@ -2,6 +2,10 @@
 
 **Backend build steps + DB schema (for critic review):** [docs/backend/PLAN.md](docs/backend/PLAN.md)
 
+**Frontend build steps (for critic review):** [docs/frontend/PLAN.md](docs/frontend/PLAN.md)
+
+**Shipped API the UI must follow:** [docs/backend/CONTRACT.md](docs/backend/CONTRACT.md)
+
 **Role:** builder. Critic pass 3: no blockers. Pass-3 should-fixes are closed below. **Plan only — do not implement until the human approves.**
 
 **Graded path:** clone → one Compose command → open the web app → send treats. Live deploy is a later task, not part of this plan.
@@ -186,7 +190,9 @@ Only after the one-command local path works and a human asks. Vercel (web) + Ren
 
 ## FE ↔ BE contract
 
-Public API. Do not rename silently. All JSON. Amounts are **JSON integers** (server type `int` / `long`, not `Double` / `BigDecimal`). Auth header on every non-auth, non-OPTIONS route: `Authorization: Bearer <token>`.
+**Source of truth for the shipped API (including health, 401 message split, CORS `localhost` vs `127.0.0.1`):** [docs/backend/CONTRACT.md](docs/backend/CONTRACT.md). Do not rename silently. All JSON. Amounts are **JSON integers** (server type `int` / `long`, not `Double` / `BigDecimal`). Auth header on every non-auth, non-OPTIONS route: `Authorization: Bearer <token>`.
+
+**401 split (easy to get wrong):** login/register `UNAUTHORIZED` is a form error (`"Wrong username or password."`). Protected-route `UNAUTHORIZED` (`"Please sign in."`) clears the token and returns to login. Do not treat a failed login as a dead session or a network failure.
 
 ### Errors (all 4xx/5xx)
 
@@ -446,4 +452,4 @@ No deploy commit in this story.
 
 ## Stop line
 
-Backend-step critic findings through C-7 are closed in [docs/backend/PLAN.md](docs/backend/PLAN.md). **Do not implement** until the human explicitly approves a step.
+Backend is implemented. Frontend plan: [docs/frontend/PLAN.md](docs/frontend/PLAN.md). **Do not implement the UI** until the human explicitly approves a frontend step.

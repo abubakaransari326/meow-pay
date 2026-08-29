@@ -26,7 +26,7 @@ The transfer flow, fully vertical, with just enough identity to make “you are 
 
 | Layer | What |
 | --- | --- |
-| **Web UI** | Register / log in; then a send screen as *this* cat: own balance, pick recipient, amount, confirm, success/failure, recent transfers. No sender picker. |
+| **Web UI** | Register / log in; then a send screen as *this* cat: own balance, pick recipient, amount, confirm, success/failure, recent transfers with `COMPLETED` / `REJECTED`. No sender picker. |
 | **Simple auth** | Register + login with **username + password**. Username is the identifier (no email). **Bearer JWT** so the API knows who is sending. Auth is not a showcase — just enough to bind the sender. No OAuth, email, password reset, refresh tokens, or KYC. |
 | **Signup bonus** | Creating a cat credits **100 treats** in the same way a future top-up would: a ledger credit, not a magic default column. README says: human top-up is the same credit, from a funding source instead of “signup bonus.” |
 | **API** | Auth; create a transfer **as the current user**; read own wallet/balance; list recipients (other cats); read own transfer history. |
@@ -44,10 +44,9 @@ The transfer flow, fully vertical, with just enough identity to make “you are 
 
 Only after the path above works. Cut from the bottom if time runs out.
 
-1. **Transfer states** — at least `completed` and `rejected` (or equivalent), visible in the UI.
-2. **History that is useful** — who, amount, when, status; for the signed-in cat.
-3. **UI that is usable** — login/register, one clear send screen, readable balance, empty/error/success states. Stop when it is obvious, not when it is pretty.
-4. **Obvious “what we skipped” in the README** — written as decisions, not apologies. Especially: top-up is the same ledger credit as signup bonus; we did not build a funding rail.
+1. **History that is useful** — who, amount, when, status; for the signed-in cat. (`COMPLETED` / `REJECTED` are must-ship, not this list.)
+2. **UI that is usable** — login/register, one clear send screen, readable balance, empty/error/success states. Stop when it is obvious, not when it is pretty.
+3. **Obvious “what we skipped” in the README** — written as decisions, not apologies. Especially: top-up is the same ledger credit as signup bonus; we did not build a funding rail.
 
 ## Out — not this takehome
 

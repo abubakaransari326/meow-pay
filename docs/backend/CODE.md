@@ -12,7 +12,7 @@ What the API code is and how the pieces connect. Filled in as each step lands.
 - `GET /api/health` → `{ "status": "up" }` (`HealthController`). Does not touch the database.
 - Security is **STATELESS**, CSRF/form/basic off. Open: `OPTIONS /**`, `/api/auth/**`, `/api/health`. Everything else needs a Bearer JWT.
 - CORS is a **global** `CorsConfigurationSource` (origin `http://localhost:5173` only; headers `Authorization`, `Content-Type`, `Idempotency-Key`). Preflight works before `/api/transfers` exists.
-- `JwtService` issues/parses HS256 tokens; `sub` is the cat UUID. `JwtAuthFilter` does not look up cats yet (no table). Invalid/missing token on a protected route → `{ "error": "UNAUTHORIZED" }`.
+- `JwtService` issues/parses HS256 tokens; `sub` is the cat UUID. `JwtAuthFilter` parses `sub` only — it does not look up the cat row. Invalid/missing token on a protected route → `{ "error": "UNAUTHORIZED" }`.
 - Errors: `{ "error", "message" }`. Bind / unreadable JSON / missing header → `VALIDATION`. Uncaught → `INTERNAL` with no SQL in `message`. Do not log password or `Authorization`.
 - Jackson `accept-float-as-int` is **false**. Hibernate JDBC timezone is UTC.
 - `POST /api/auth/register` → **201** `{ token, username }`. Username is trimmed, then rejected if empty/`> 64`, then lowercased. Password empty/`> 72` → `VALIDATION`. One inner TX writes the cat + `SIGNUP_BONUS` **+100**. The outer method is not `@Transactional`; a unique-name race becomes `USERNAME_TAKEN` (409), not 500.
@@ -33,7 +33,7 @@ What the API code is and how the pieces connect. Filled in as each step lands.
 
 ## Runbook
 
-[README.md](../../README.md) is the how-to-run (Compose, demo cats, curl, `mvn test`). It does not explain the internals above. The web UI is not in this pass; that section will grow when the frontend lands.
+[README.md](../../README.md) is the how-to-run (Compose, demo cats, curl, `mvn test`). It does not explain the internals above. The shipped JSON contract for the frontend is [CONTRACT.md](CONTRACT.md). The web UI plan is [docs/frontend/PLAN.md](../frontend/PLAN.md).
 
 ## Schema (Flyway `V1__init.sql`)
 
@@ -53,7 +53,7 @@ Root `docker-compose.yml` has two services: `postgres` and `api`. There is no we
 - Postgres: `postgres:16-alpine`, db/user/password `meowpay`, healthcheck `pg_isready`.
 - API: built from `backend/Dockerfile` (Maven package, then `eclipse-temurin:21-jre` **with curl installed** — the JRE image does not ship curl). Healthcheck hits `/api/health`, `start_period` 60s.
 - Compose injects `SPRING_DATASOURCE_URL`, `USERNAME`, and `PASSWORD`. The JDBC host is `postgres` on the Compose network, not `localhost`.
-- Flyway is still off. The API starts, Hikari connects, no migrations run.
+- Flyway is **on**. V1 runs on first boot.
 
 Run the API **only via Compose**. Do not add `5432:5432` so host Maven can reach the DB.
 
