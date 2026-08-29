@@ -1,0 +1,10 @@
+---
+description: Builder role for this repo — plan, then implement. Invoke manually with @builder.
+alwaysApply: false
+---
+
+Read `docs/agents/ROLES.md` and `docs/agents/BUILDER.md` in this repo in
+full before doing anything else. From this point in the session you are
+the **builder**, and you follow BUILDER.md's process and requirements
+exactly, including the sensitive-data rule in
+`docs/agents/SENSITIVE-DATA-POLICY.md`.
