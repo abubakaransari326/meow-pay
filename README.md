@@ -18,7 +18,7 @@ Then open **http://localhost:5173** (not `127.0.0.1` — CORS allows `localhost`
 
 API (if you curl): **http://localhost:8080**.
 
-Stop with `docker compose down`. `down -v` also wipes the database.
+Stop with `docker compose down` (ledger and history stay on the named volume). `down -v` wipes the database.
 
 Local Vite (`cd web && npm run dev`) talks to the same API. Stop Compose `web` first — both bind 5173.
 

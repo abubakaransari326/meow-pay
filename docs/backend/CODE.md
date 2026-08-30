@@ -52,7 +52,7 @@ Balance of a cat is `COALESCE(SUM(ledger_entries.amount), 0)` (`LedgerEntryRepos
 
 Root `docker-compose.yml` has three services: `postgres`, `api`, and `web`. Postgres **5432 is not published** on the host.
 
-- Postgres: `postgres:16-alpine`, db/user/password `meowpay`, healthcheck `pg_isready`.
+- Postgres: `postgres:16-alpine`, db/user/password `meowpay`, healthcheck `pg_isready`. Named volume `postgres_data` so `down` / `up` keeps the ledger. `down -v` is the wipe.
 - API: built from `backend/Dockerfile` (Maven package, then `eclipse-temurin:21-jre` **with curl installed** — the JRE image does not ship curl). Healthcheck hits `/api/health`, `start_period` 60s.
 - Web: built from `web/Dockerfile` (`node:22-alpine` + `npm ci`, then `nginx:1.27-alpine`). Host **5173** maps to nginx **80**. `VITE_API_URL=http://localhost:8080` is baked in at image build — the browser calls localhost, never `http://api:8080`. Healthcheck is `wget` on `/`.
 - Compose injects `SPRING_DATASOURCE_URL`, `USERNAME`, and `PASSWORD`. The JDBC host is `postgres` on the Compose network, not `localhost`.

@@ -150,7 +150,7 @@ Column CHECKs, the partial unique index, and the lock-then-SUM invariants are in
 
 ## Run and tests
 
-**Compose is the run story.** Postgres (unpublished 5432) + API 8080 + web 5173. Reviewer needs Docker, not a JDK/Node toolchain. Datasource URL is injected; we never default to `localhost:5432` so host Maven cannot silently talk to a published DB.
+**Compose is the run story.** Postgres (unpublished 5432, named volume `postgres_data`) + API 8080 + web 5173. `down` keeps the ledger; `down -v` wipes it. Reviewer needs Docker, not a JDK/Node toolchain. Datasource URL is injected; we never default to `localhost:5432` so host Maven cannot silently talk to a published DB.
 
 **Web image:** `node:22-alpine`, lockfile + `npm ci`, `nginx:1.27-alpine`, `nginx.conf` on `/etc/nginx/conf.d/default.conf`, `wget` healthcheck so `--wait` waits for port 80.
 
