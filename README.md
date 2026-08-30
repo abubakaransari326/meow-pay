@@ -1,5 +1,7 @@
 # MeowPay
 
+**Demo:** [Loom walkthrough](https://www.loom.com/share/f98e416235b942098578cfb4a831fd6a)
+
 A signed-in cat sends treats to another cat. Auth exists only to identify the sender. The web app is a small dashboard (send + history) that stacks on a phone-width viewport.
 
 Balance is the sum of ledger rows, not a column on the cat. A send locks the sender (`FOR UPDATE`), then `SUM`s, then either writes debit **−N** and credit **+N** or stores `REJECTED` with no ledger movement. Retrying the same submit (`Idempotency-Key`) does not double-send.
